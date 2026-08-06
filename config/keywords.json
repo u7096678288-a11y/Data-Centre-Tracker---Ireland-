@@ -1,0 +1,6 @@
+{
+  "strong_phrases": ["data centre", "data center", "datacentre", "datacenter", "server farm", "hyperscale", "co-location", "colocation", "cloud computing campus"],
+  "operator_terms": ["microsoft", "amazon", "aws", "google", "meta", "facebook", "echelon", "equinix", "digital realty", "vantage", "edgeconnex", "keppel", "crusoe", "greenergy", "engine node", "herbata", "art data centres", "pure data centres"],
+  "supporting_terms": ["server hall", "data hall", "digital infrastructure", "backup generator", "emergency generator", "substation", "transformer", "cooling plant", "chiller", "campus", "energy centre", "electrical switchroom", "battery energy storage"],
+  "false_positive_terms": ["centre for data", "data collection centre", "data processing office", "training centre", "community centre", "recycling centre"]
+}
