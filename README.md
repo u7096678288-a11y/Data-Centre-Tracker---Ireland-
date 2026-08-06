@@ -37,7 +37,9 @@ The public dashboard no longer depends on GitHub Actions for live data.
 
 1. Open **Settings → Pages**.
 2. Under **Build and deployment**, choose **Deploy from a branch**.
-3. Select branch **Main** and folder **/(root)**.
+3. Select branch **main** and folder **/(root)**.
 4. Click **Save**.
 
 The browser then queries the live ArcGIS planning layer whenever the platform is opened. The GitHub Actions workflows remain available as an optional daily repository snapshot and alternative Pages deployment route.
+
+Deployment refreshed on 6 August 2026.
