@@ -4,17 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Irish Data Centre Planning Tracker</title>
-  <meta name="description" content="Irish data-centre planning applications from 2016 to 2026 mapped across all 31 local authorities.">
+  <meta name="description" content="Irish data-centre planning applications and associated campus works from 2016 to 2026.">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="assets/style-v6.css?v=20260807-7">
+  <link rel="stylesheet" href="assets/style-v6.css?v=20260807-8">
 </head>
 <body>
   <header>
     <div>
       <span class="eyebrow">PLANNING INTELLIGENCE • IRELAND</span>
       <h1>Data Centre Planning Tracker</h1>
-      <p>Irish data-centre planning applications from 2016–2026, checked across all 31 local authorities and plotted as map pins.</p>
+      <p>Irish data centres, data halls and associated offices, substations, power, cooling and campus works from 2016–2026.</p>
     </div>
     <a class="support" href="https://www.patreon.com/16538169/join" target="_blank" rel="noopener">Support this research on Patreon</a>
   </header>
@@ -23,7 +23,7 @@
     <section id="kpis" class="kpis" aria-label="Data-centre planning KPIs"></section>
 
     <section class="toolbar">
-      <input id="search" disabled aria-label="Search applications" placeholder="Search location, applicant, authority or reference">
+      <input id="search" disabled aria-label="Search applications" placeholder="Search location, applicant, authority, category or reference">
       <select id="status" disabled aria-label="Filter by planning status">
         <option value="">All planning statuses</option>
         <option value="Granted">Granted</option>
@@ -33,13 +33,13 @@
         <option value="Invalid">Invalid</option>
       </select>
       <select id="authority" disabled aria-label="Filter by planning authority">
-        <option value="">All 31 councils</option>
+        <option value="">All councils with matches</option>
       </select>
       <button id="download" disabled>Export filtered CSV</button>
     </section>
 
     <section class="grid">
-      <div id="map" aria-label="Map pins for data-centre planning applications in Ireland"></div>
+      <div id="map" aria-label="Map pins for data-centre planning applications and associated works in Ireland"></div>
       <div class="panel">
         <h2>Map key</h2>
         <div class="legend">
@@ -70,17 +70,17 @@
             <th>Floor area</th>
           </tr>
         </thead>
-        <tbody id="rows"><tr><td colspan="9">Checking all 31 councils for data-centre planning applications…</td></tr></tbody>
+        <tbody id="rows"><tr><td colspan="9">Searching the national planning register for data-centre and associated campus works…</td></tr></tbody>
       </table>
     </section>
 
-    <p id="updated" class="updated" aria-live="polite">Checking all 31 Irish planning authorities…</p>
+    <p id="updated" class="updated" aria-live="polite">Loading core data-centre applications first…</p>
   </main>
 
-  <footer>Source: Department of Housing National Planning Application Database, Planning Application Points. Search period: 1 January 2016 to 31 December 2026. Site area is shown in hectares and floor area in square metres where recorded in the source.</footer>
+  <footer>Source: Department of Housing National Planning Application Database, Planning Application Points. Search period: 1 January 2016 to 31 December 2026. The tracker includes explicit data-centre development and operator-linked ancillary works such as offices, substations, generators, cooling plant, energy centres, transformers, switchrooms and storage infrastructure.</footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-  <script src="assets/app-v7.js?v=20260807-7"></script>
+  <script src="assets/app-v8.js?v=20260807-8"></script>
 </body>
 </html>
