@@ -9,6 +9,12 @@ on:
       - 'config/**'
       - 'data/manual_overrides.json'
       - 'scripts/update_data.py'
+  pull_request:
+    branches: [Main]
+    paths:
+      - 'config/**'
+      - 'data/manual_overrides.json'
+      - 'scripts/update_data.py'
 permissions:
   contents: write
 jobs:
@@ -16,6 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -26,4 +34,4 @@ jobs:
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add data/data-centres.geojson data/summary.json
           git diff --cached --quiet || git commit -m "Refresh national data-centre planning data"
-          git push
+          git push origin HEAD:${{ github.head_ref || github.ref_name }}
