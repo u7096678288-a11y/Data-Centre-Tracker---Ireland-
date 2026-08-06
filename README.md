@@ -4,30 +4,26 @@ A public mapping and planning-intelligence platform for Irish planning applicati
 
 ## Live site
 
-After GitHub Pages is enabled, the site publishes at:
-
 `https://u7096678288-a11y.github.io/Data-Centre-Tracker---Ireland-/`
 
 ## Core functions
 
-- Queries the official National Planning Application Database directly when the page opens.
-- Searches the `DevelopmentDescription` field for explicit data-centre wording and supporting technical infrastructure.
-- Scores description matches as **Confirmed**, **Probable**, **Review**, or **Excluded**.
+- Queries the official National Planning Application Database when the page opens.
+- Searches the `DevelopmentDescription` field for explicit data-centre and closely equivalent terminology.
+- Uses ArcGIS JSONP requests so the public GitHub Pages site can load the national planning service reliably.
 - Deduplicates applications using planning authority and application number.
 - Rejects point geometries outside the Ireland map extent.
-- Locks the Leaflet map to Ireland and prevents world wrapping or unrestricted zooming out.
-- Maps projects and provides planning-status KPIs, authority charts, search, filters and CSV export.
-- Uses `data/manual_overrides.json` for verified inclusions and false-positive exclusions.
-- Retains `data/data-centres.geojson` as a fallback repository snapshot.
+- Locks the Leaflet map to Ireland and prevents world wrapping.
+- Maps applications by planning status rather than confidence score.
+- Provides application, authority, granted, pending, refused and appealed KPIs.
+- Provides planning-status and authority charts, search, filters and CSV export.
 - Links to the project Patreon: https://www.patreon.com/16538169/join
 
 ## Description matching
 
-The live query checks planning descriptions for terms including data centre/data center, datacentre, data hall, server hall, server farm, hyperscale, colocation, cloud-computing campus, compute campus, data-storage facility and digital-infrastructure campus. Broader ICT, server-room and data-processing descriptions are included only where the description also contains supporting infrastructure such as generators, substations, transformers, cooling plant, chillers or switchrooms.
+The live query checks planning descriptions for explicit terms including data centre/data center, datacentre/datacenter, data hall, server hall, server farm, hyperscale, colocation, cloud-computing centre or campus, compute campus, data-storage facility and digital-infrastructure campus.
 
-The classifier is deliberately auditable. Use `data/manual_overrides.json` for verified includes and false-positive exclusions. The stable record key is:
-
-`PLANNING AUTHORITY|APPLICATION NUMBER`
+The tracker does not assign confidence scores. A record is mapped only where its development description matches one of the configured data-centre patterns.
 
 ## Data source
 
@@ -42,6 +38,6 @@ The national register merges participating local-authority planning registers. M
 3. Select branch **main** and folder **/(root)**.
 4. Click **Save**.
 
-The browser queries the live ArcGIS planning layer whenever the platform opens. The `.nojekyll` file allows direct static deployment from the branch.
+The `.nojekyll` file allows direct static deployment from the branch.
 
-Deployment refreshed on 6 August 2026.
+Deployment refreshed on 7 August 2026.
