@@ -1,7 +1,19 @@
 const SERVICE = 'https://services.arcgis.com/NzlPQPKn5QF9v2US/arcgis/rest/services/IrishPlanningApplications/FeatureServer/0/query';
-const map = L.map('map').setView([53.35, -7.7], 7);
+const IRELAND_BOUNDS = L.latLngBounds([[51.20, -11.20], [55.60, -5.25]]);
+
+const map = L.map('map', {
+  maxBounds: IRELAND_BOUNDS,
+  maxBoundsViscosity: 1.0,
+  minZoom: 6,
+  worldCopyJump: false
+}).fitBounds(IRELAND_BOUNDS);
+
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap contributors'
+  attribution: '© OpenStreetMap contributors',
+  bounds: IRELAND_BOUNDS,
+  noWrap: true,
+  minZoom: 6,
+  maxZoom: 18
 }).addTo(map);
 
 let data = [];
@@ -9,45 +21,53 @@ let layer;
 let statusChart;
 let authorityChart;
 
-const STRONG_PHRASES = [
-  'data centre', 'data center', 'datacentre', 'datacenter', 'data hall',
-  'server hall', 'server farm', 'server facility', 'hyperscale', 'co-location',
-  'colocation', 'cloud computing campus', 'compute campus', 'ai compute campus',
-  'high performance computing campus', 'data storage facility',
-  'digital infrastructure campus'
-];
-
-const OPERATOR_TERMS = [
-  'microsoft', 'amazon', 'google', 'facebook', 'echelon', 'equinix',
-  'digital realty', 'vantage', 'edgeconnex', 'keppel', 'crusoe', 'greenergy',
-  'engine node', 'herbata', 'art data centres', 'pure data centres',
-  'k2 strategic infrastructure ireland', 'cloudhq', 'cyrusone', 'interxion',
-  'dataplex', 'digital reef'
-];
-
-const SUPPORTING_TERMS = [
-  'digital infrastructure', 'backup generator', 'emergency generator',
-  'generator compound', 'substation', 'transformer', 'cooling plant', 'chiller',
-  'campus', 'energy centre', 'electrical switchroom', 'battery energy storage',
-  'server', 'data hall'
-];
-
-const FALSE_POSITIVES = [
-  'centre for data', 'data collection centre', 'data processing office',
-  'training centre', 'community centre', 'recycling centre'
-];
-
-const SEARCH_TERMS = [
+const DESCRIPTION_QUERY_TERMS = [
   'DATA CENT', 'DATACENT', 'DATA HALL', 'SERVER HALL', 'SERVER FARM',
-  'HYPERSCALE', 'COLOCATION', 'CO-LOCATION', 'DIGITAL INFRASTRUCTURE',
-  'CLOUD COMPUTING', 'COMPUTE CAMPUS', 'DATA STORAGE FACILITY'
+  'SERVER ROOM', 'HYPERSCALE', 'COLOCATION', 'CO-LOCATION',
+  'CLOUD COMPUT', 'COMPUTE CAMPUS', 'DATA STORAGE',
+  'DIGITAL INFRASTRUCTURE', 'ICT FACIL', 'INFORMATION TECHNOLOGY FACIL',
+  'COMPUTER FACIL', 'DATA PROCESSING FACIL'
 ];
 
-const OPERATOR_SEARCH_TERMS = [
-  'MICROSOFT', 'AMAZON', 'GOOGLE', 'FACEBOOK', 'ECHELON', 'EQUINIX',
-  'DIGITAL REALTY', 'VANTAGE', 'EDGECONNEX', 'KEPPEL', 'CRUSOE',
-  'ENGINE NODE', 'HERBATA', 'ART DATA', 'PURE DATA', 'K2 STRATEGIC',
-  'CLOUDHQ', 'CYRUSONE', 'INTERXION', 'DATAPLEX', 'DIGITAL REEF'
+const EXPLICIT_PATTERNS = [
+  ['data centre', /\bdata[\s-]*cent(?:re|er)s?\b/i],
+  ['data hall', /\bdata halls?\b/i],
+  ['server hall', /\bserver halls?\b/i],
+  ['server farm', /\bserver farms?\b/i],
+  ['hyperscale facility', /\bhyperscale(?:\s+(?:data|computing|digital))?(?:\s+(?:centre|center|campus|facility))?\b/i],
+  ['colocation facility', /\bco-?location(?:\s+(?:data|computing))?(?:\s+(?:centre|center|campus|facility))\b/i],
+  ['cloud-computing facility', /\bcloud computing(?:\s+(?:centre|center|campus|facility))\b/i],
+  ['compute campus', /\b(?:ai|high performance|high-performance)?\s*compute campus\b/i],
+  ['data-storage facility', /\bdata storage(?:\s+(?:centre|center|campus|facility))\b/i],
+  ['digital-infrastructure campus', /\bdigital infrastructure(?:\s+(?:centre|center|campus|facility))\b/i]
+];
+
+const INFRASTRUCTURE_PATTERNS = [
+  ['server room', /\bserver rooms?\b/i],
+  ['ICT facility', /\bict\s+(?:building|campus|centre|center|facility)\b/i],
+  ['information-technology facility', /\binformation technology\s+(?:building|campus|centre|center|facility)\b/i],
+  ['computer facility', /\bcomputer\s+(?:building|campus|centre|center|facility)\b/i],
+  ['data-processing facility', /\bdata processing\s+(?:building|campus|centre|center|facility)\b/i],
+  ['generator infrastructure', /\b(?:emergency|standby|backup)?\s*generators?\b/i],
+  ['generator compound', /\bgenerator\s+(?:compound|yard|building)\b/i],
+  ['substation', /\bsub-?station\b/i],
+  ['transformer', /\btransformers?\b/i],
+  ['cooling plant', /\bcooling\s+(?:plant|system|equipment|infrastructure)\b/i],
+  ['chiller', /\bchillers?\b/i],
+  ['switchroom', /\bswitch\s*rooms?\b/i],
+  ['energy centre', /\benergy cent(?:re|er)\b/i],
+  ['battery storage', /\bbattery energy storage\b/i],
+  ['campus', /\bcampus\b/i]
+];
+
+const FALSE_POSITIVE_PATTERNS = [
+  /\bcentre for data\b/i,
+  /\bdata collection cent(?:re|er)\b/i,
+  /\bdata analytics cent(?:re|er)\b/i,
+  /\bdata processing office\b/i,
+  /\btraining cent(?:re|er)\b/i,
+  /\bcommunity cent(?:re|er)\b/i,
+  /\brecycling cent(?:re|er)\b/i
 ];
 
 const OUT_FIELDS = [
@@ -59,13 +79,17 @@ const OUT_FIELDS = [
   'FIRequestDate', 'FIRecDate', 'FloorArea', 'AreaofSite', 'LinkAppDetails'
 ].join(',');
 
-const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({
+const esc = value => String(value ?? '').replace(/[&<>"']/g, character => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-}[char]));
+}[character]));
 
 const props = feature => feature.properties || {};
 const clean = value => String(value ?? '').replace(/\s+/g, ' ').trim();
 const lower = value => clean(value).toLowerCase();
+
+function setStatus(message) {
+  document.querySelector('#updated').textContent = message;
+}
 
 function normaliseDate(value) {
   if (!value) return '';
@@ -79,36 +103,53 @@ function planningStatus(value) {
   if (text.includes('grant') || text.includes('conditional') || text.includes('unconditional')) return 'Granted';
   if (text.includes('refus')) return 'Refused';
   if (text.includes('withdraw')) return 'Withdrawn';
+  if (text.includes('invalid')) return 'Invalid';
   return 'Pending / other';
 }
 
-function classify(text) {
-  const value = lower(text);
-  const strong = STRONG_PHRASES.filter(term => value.includes(term));
-  const operators = OPERATOR_TERMS.filter(term => value.includes(term));
-  const supporting = SUPPORTING_TERMS.filter(term => value.includes(term));
-  const falseMatches = FALSE_POSITIVES.filter(term => value.includes(term));
+function classifyDescription(description) {
+  const text = clean(description);
+  const explicit = EXPLICIT_PATTERNS.filter(([, pattern]) => pattern.test(text)).map(([label]) => label);
+  const infrastructure = INFRASTRUCTURE_PATTERNS.filter(([, pattern]) => pattern.test(text)).map(([label]) => label);
+  const falsePositive = FALSE_POSITIVE_PATTERNS.some(pattern => pattern.test(text));
 
-  if (falseMatches.length && !strong.length) {
-    return { flag: 'excluded', score: 0, reasons: { false_positive: falseMatches } };
+  if (falsePositive && !explicit.length) {
+    return { flag: 'excluded', score: 0, reasons: { false_positive: true } };
   }
-  if (strong.length) {
+
+  if (explicit.length) {
     return {
       flag: 'confirmed',
-      score: Math.min(100, 90 + strong.length * 2),
-      reasons: { strong, operator: operators, supporting }
+      score: Math.min(100, 92 + explicit.length * 2 + Math.min(4, infrastructure.length)),
+      reasons: { description_matches: explicit, associated_infrastructure: infrastructure }
     };
   }
-  if (operators.length && supporting.length) {
+
+  const hasTechnicalFacility = infrastructure.some(item => [
+    'server room', 'ICT facility', 'information-technology facility',
+    'computer facility', 'data-processing facility'
+  ].includes(item));
+  const enablingInfrastructure = infrastructure.filter(item => ![
+    'server room', 'ICT facility', 'information-technology facility',
+    'computer facility', 'data-processing facility', 'campus'
+  ].includes(item));
+
+  if (hasTechnicalFacility && enablingInfrastructure.length >= 2) {
     return {
       flag: 'probable',
-      score: Math.min(89, 65 + operators.length * 5 + supporting.length * 3),
-      reasons: { operator: operators, supporting }
+      score: Math.min(89, 70 + enablingInfrastructure.length * 4),
+      reasons: { technical_facility: infrastructure, enabling_infrastructure: enablingInfrastructure }
     };
   }
-  if (supporting.length >= 2 && ['server', 'digital', 'cloud', 'compute'].some(term => value.includes(term))) {
-    return { flag: 'review', score: 55, reasons: { supporting } };
+
+  if (hasTechnicalFacility && enablingInfrastructure.length >= 1) {
+    return {
+      flag: 'review',
+      score: 58,
+      reasons: { technical_facility: infrastructure, enabling_infrastructure: enablingInfrastructure }
+    };
   }
+
   return { flag: 'excluded', score: 0, reasons: {} };
 }
 
@@ -120,17 +161,19 @@ function chunks(items, size) {
 
 async function fetchJson(params) {
   const url = `${SERVICE}?${new URLSearchParams(params).toString()}`;
-  const response = await fetch(url, { headers: { Accept: 'application/json' } });
+  const response = await fetch(url, { headers: { Accept: 'application/json' }, cache: 'no-store' });
   if (!response.ok) throw new Error(`ArcGIS request failed (${response.status})`);
   const json = await response.json();
   if (json.error) throw new Error(json.error.message || 'ArcGIS query error');
   return json;
 }
 
-async function queryIds(field, terms) {
+async function queryDescriptionIds() {
   const ids = new Set();
-  for (const batch of chunks(terms, 5)) {
-    const where = batch.map(term => `UPPER(${field}) LIKE '%${term.replaceAll("'", "''")}%'`).join(' OR ');
+  for (const batch of chunks(DESCRIPTION_QUERY_TERMS, 4)) {
+    const where = batch
+      .map(term => `UPPER(DevelopmentDescription) LIKE '%${term.replaceAll("'", "''")}%'`)
+      .join(' OR ');
     const json = await fetchJson({ f: 'json', where, returnIdsOnly: 'true' });
     (json.objectIds || []).forEach(id => ids.add(id));
   }
@@ -181,7 +224,17 @@ async function fetchManualIncludes(includes) {
   return features;
 }
 
+function hasIrishPointGeometry(feature) {
+  const coordinates = feature.geometry?.coordinates;
+  if (feature.geometry?.type !== 'Point' || !Array.isArray(coordinates) || coordinates.length < 2) return false;
+  const [longitude, latitude] = coordinates.map(Number);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return false;
+  return IRELAND_BOUNDS.contains(L.latLng(latitude, longitude));
+}
+
 function normaliseFeature(feature, overrideMap, excludedKeys) {
+  if (!hasIrishPointGeometry(feature)) return null;
+
   const raw = feature.properties || {};
   const authority = clean(raw.PlanningAuthority);
   const applicationNumber = clean(raw.ApplicationNumber);
@@ -191,8 +244,7 @@ function normaliseFeature(feature, overrideMap, excludedKeys) {
   const description = clean(raw.DevelopmentDescription);
   const address = clean(raw.DevelopmentAddress);
   const applicant = clean([raw.ApplicantForename, raw.ApplicantSurname].filter(Boolean).join(' '));
-  const text = [description, address, applicant].join(' | ');
-  let result = classify(text);
+  let result = classifyDescription(description);
   const override = overrideMap.get(key);
 
   if (override) {
@@ -242,16 +294,9 @@ function normaliseFeature(feature, overrideMap, excludedKeys) {
 }
 
 async function loadLiveData() {
-  setStatus('Searching the national planning database…');
-  const [descriptionIds, forenameIds, surnameIds, overrides] = await Promise.all([
-    queryIds('DevelopmentDescription', [...SEARCH_TERMS, ...OPERATOR_SEARCH_TERMS]),
-    queryIds('ApplicantForename', OPERATOR_SEARCH_TERMS),
-    queryIds('ApplicantSurname', OPERATOR_SEARCH_TERMS),
-    loadOverrides()
-  ]);
-
-  const ids = new Set([...descriptionIds, ...forenameIds, ...surnameIds]);
-  setStatus(`Reviewing ${ids.size.toLocaleString('en-IE')} planning candidates…`);
+  setStatus('Searching every planning description for data-centre development…');
+  const [ids, overrides] = await Promise.all([queryDescriptionIds(), loadOverrides()]);
+  setStatus(`Reviewing ${ids.size.toLocaleString('en-IE')} description matches…`);
 
   const [features, manualFeatures] = await Promise.all([
     fetchFeaturesByIds(ids),
@@ -260,8 +305,11 @@ async function loadLiveData() {
 
   const unique = new Map();
   [...features, ...manualFeatures].forEach(feature => {
-    const id = feature.properties?.OBJECTID ?? JSON.stringify(feature.geometry);
-    unique.set(id, feature);
+    const raw = feature.properties || {};
+    const key = `${clean(raw.PlanningAuthority).toUpperCase()}|${clean(raw.ApplicationNumber).toUpperCase()}`;
+    const fallbackKey = String(raw.OBJECTID ?? JSON.stringify(feature.geometry));
+    const stableKey = key === '|' ? fallbackKey : key;
+    if (!unique.has(stableKey) || (!unique.get(stableKey).geometry && feature.geometry)) unique.set(stableKey, feature);
   });
 
   const overrideMap = new Map((overrides.include || []).map(item => [String(item.key || '').toUpperCase(), item]));
@@ -277,7 +325,7 @@ async function loadFallbackData() {
   const response = await fetch('data/data-centres.geojson', { cache: 'no-store' });
   if (!response.ok) throw new Error('Repository fallback data is unavailable');
   const collection = await response.json();
-  return collection.features || [];
+  return (collection.features || []).filter(hasIrishPointGeometry);
 }
 
 function filtered() {
@@ -294,7 +342,7 @@ function filtered() {
 
 function renderKpis() {
   const summary = {
-    total: data.length,
+    applications: data.length,
     confirmed: data.filter(item => props(item).flag === 'confirmed').length,
     probable: data.filter(item => props(item).flag === 'probable').length,
     review: data.filter(item => props(item).flag === 'review').length,
@@ -317,7 +365,9 @@ function populateAuthorities() {
 function render() {
   const selected = filtered();
   if (layer) layer.remove();
+
   layer = L.geoJSON({ type: 'FeatureCollection', features: selected }, {
+    filter: hasIrishPointGeometry,
     pointToLayer: (feature, latlng) => L.circleMarker(latlng, {
       radius: 7,
       weight: 2,
@@ -330,9 +380,12 @@ function render() {
     }
   }).addTo(map);
 
-  if (selected.length) {
-    try { map.fitBounds(layer.getBounds(), { padding: [20, 20], maxZoom: 12 }); } catch {}
+  if (selected.length && layer.getBounds().isValid()) {
+    map.fitBounds(layer.getBounds(), { padding: [24, 24], maxZoom: 11 });
+  } else {
+    map.fitBounds(IRELAND_BOUNDS);
   }
+  map.panInsideBounds(IRELAND_BOUNDS, { animate: false });
 
   const statuses = {};
   selected.forEach(item => {
@@ -355,56 +408,61 @@ function render() {
   authorityChart?.destroy();
   authorityChart = new Chart(document.querySelector('#authorityChart'), {
     type: 'bar',
-    data: { labels: topAuthorities.map(item => item[0]), datasets: [{ label: 'Applications', data: topAuthorities.map(item => item[1]) }] },
+    data: {
+      labels: topAuthorities.map(item => item[0]),
+      datasets: [{ label: 'Applications', data: topAuthorities.map(item => item[1]) }]
+    },
     options: { indexAxis: 'y', plugins: { legend: { display: false } } }
   });
 
   document.querySelector('#rows').innerHTML = selected.map(feature => {
     const item = props(feature);
     return `<tr><td><span class="badge ${esc(item.flag)}">${esc(item.flag)}</span></td><td><b>${esc(item.project_name)}</b><br><small>${esc(item.applicant)}</small></td><td>${esc(item.planning_authority)}</td><td>${item.source_url ? `<a target="_blank" rel="noopener" href="${esc(item.source_url)}">${esc(item.application_number)}</a>` : esc(item.application_number)}</td><td>${esc(item.received_date)}</td><td>${esc(item.decision)}</td><td>${esc(item.appeal)}</td><td>${esc(item.confidence_score)}%</td></tr>`;
-  }).join('') || '<tr><td colspan="8">No records match the selected filters.</td></tr>';
+  }).join('') || '<tr><td colspan="8">No Irish data-centre applications match the selected filters.</td></tr>';
 }
 
-function setStatus(message) {
-  document.querySelector('#updated').textContent = message;
-}
-
-function exportCSV() {
-  const keys = ['flag', 'confidence_score', 'project_name', 'operator', 'planning_authority', 'application_number', 'address', 'received_date', 'decision', 'decision_date', 'appeal', 'description', 'source_url'];
-  const rows = [keys, ...filtered().map(item => keys.map(key => props(item)[key] ?? ''))];
+function exportCsv() {
+  const keys = [
+    'flag', 'confidence_score', 'project_name', 'operator', 'planning_authority',
+    'application_number', 'address', 'received_date', 'decision', 'decision_date',
+    'appeal', 'description', 'source_url'
+  ];
+  const rows = [keys, ...filtered().map(feature => keys.map(key => props(feature)[key] ?? ''))];
   const csv = rows.map(row => row.map(value => `"${String(value).replaceAll('"', '""')}"`).join(',')).join('\n');
   const link = document.createElement('a');
   link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-  link.download = 'irish-data-centre-planning-filtered.csv';
+  link.download = 'irish-data-centre-planning-applications.csv';
   link.click();
   URL.revokeObjectURL(link.href);
 }
 
 async function initialise() {
+  let source = 'live national planning database';
   try {
     data = await loadLiveData();
-    if (!data.length) throw new Error('The live query returned no classified records');
-    setStatus(`Live national query completed ${new Date().toLocaleString('en-IE')} · ${data.length.toLocaleString('en-IE')} classified records`);
+    if (!data.length) throw new Error('The description search returned no verified Irish data-centre records');
   } catch (error) {
     console.error(error);
-    try {
-      data = await loadFallbackData();
-      setStatus(`Live query unavailable; showing repository snapshot · ${error.message}`);
-    } catch (fallbackError) {
-      setStatus(`Data could not be loaded: ${fallbackError.message}`);
-      document.querySelector('#rows').innerHTML = `<tr><td colspan="8">${esc(fallbackError.message)}</td></tr>`;
-      return;
-    }
+    source = 'repository fallback';
+    setStatus('Live query unavailable; loading repository fallback…');
+    data = await loadFallbackData();
   }
 
   renderKpis();
   populateAuthorities();
   render();
+  setStatus(`${data.length.toLocaleString('en-IE')} description-matched planning applications plotted within Ireland · Source: ${source} · Checked ${new Date().toLocaleString('en-IE')}`);
 }
 
 ['search', 'flag', 'authority'].forEach(id => {
-  document.querySelector(`#${id}`).addEventListener(id === 'search' ? 'input' : 'change', render);
+  const element = document.querySelector(`#${id}`);
+  element.addEventListener(id === 'search' ? 'input' : 'change', render);
 });
-document.querySelector('#download').addEventListener('click', exportCSV);
+document.querySelector('#download').addEventListener('click', exportCsv);
 
-initialise();
+initialise().catch(error => {
+  console.error(error);
+  setStatus(`Data could not be loaded: ${error.message}`);
+  document.querySelector('#rows').innerHTML = `<tr><td colspan="8">Data could not be loaded: ${esc(error.message)}</td></tr>`;
+  map.fitBounds(IRELAND_BOUNDS);
+});
