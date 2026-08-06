@@ -4,17 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Irish Data Centre Planning Tracker</title>
-  <meta name="description" content="Irish data-centre planning applications from 2016 to 2026 mapped from national planning descriptions.">
+  <meta name="description" content="Irish data-centre planning applications from 2016 to 2026 mapped across all 31 local authorities.">
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="assets/style.css?v=20260807-5">
+  <link rel="stylesheet" href="assets/style-v6.css?v=20260807-6">
 </head>
 <body>
   <header>
     <div>
       <span class="eyebrow">PLANNING INTELLIGENCE • IRELAND</span>
       <h1>Data Centre Planning Tracker</h1>
-      <p>Irish data-centre planning applications from 2016–2026, identified from national planning descriptions and plotted as map pins.</p>
+      <p>Irish data-centre planning applications from 2016–2026, checked across all 31 local authorities and plotted as map pins.</p>
     </div>
     <a class="support" href="https://www.patreon.com/16538169/join" target="_blank" rel="noopener">Support this research on Patreon</a>
   </header>
@@ -33,7 +33,7 @@
         <option value="Invalid">Invalid</option>
       </select>
       <select id="authority" disabled aria-label="Filter by planning authority">
-        <option value="">All authorities</option>
+        <option value="">All 31 councils</option>
       </select>
       <button id="download" disabled>Export filtered CSV</button>
     </section>
@@ -50,7 +50,7 @@
         </div>
         <h2>Planning pipeline</h2>
         <canvas id="statusChart"></canvas>
-        <h2>Top authorities</h2>
+        <h2>Councils with applications</h2>
         <canvas id="authorityChart"></canvas>
       </div>
     </section>
@@ -66,19 +66,21 @@
             <th>Received</th>
             <th>Decision</th>
             <th>Appeal</th>
+            <th>Site area</th>
+            <th>Floor area</th>
           </tr>
         </thead>
-        <tbody id="rows"><tr><td colspan="7">Loading the first matching planning records…</td></tr></tbody>
+        <tbody id="rows"><tr><td colspan="9">Checking all 31 councils for data-centre planning applications…</td></tr></tbody>
       </table>
     </section>
 
-    <p id="updated" class="updated" aria-live="polite">Loading Irish data-centre planning applications…</p>
+    <p id="updated" class="updated" aria-live="polite">Checking all 31 Irish planning authorities…</p>
   </main>
 
-  <footer>Source: Department of Housing National Planning Application Database, Planning Application Points. Search period: 1 January 2016 to 31 December 2026. Results load progressively; unavailable requests time out without blocking the map.</footer>
+  <footer>Source: Department of Housing National Planning Application Database, Planning Application Points. Search period: 1 January 2016 to 31 December 2026. Site area is shown in hectares and floor area in square metres where recorded in the source.</footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-  <script src="assets/app-v5.js?v=20260807-5"></script>
+  <script src="assets/app-v6.js?v=20260807-6"></script>
 </body>
 </html>
