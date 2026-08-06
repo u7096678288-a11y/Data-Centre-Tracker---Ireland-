@@ -51,7 +51,7 @@ def main():
     meta=get_json(LAYER,{"f":"json"})
     string_fields=[f["name"] for f in meta.get("fields",[]) if f.get("type")=="esriFieldTypeString"]
     likely=[f for f in string_fields if any(k in f.lower() for k in ["desc","develop","address","location","applicant","name"])] or string_fields
-    terms=["%DATA CENT%","%DATACENT%","%SERVER%","%HYPERSCALE%","%COLOCATION%","%DIGITAL INFRASTRUCTURE%"]
+    terms=["%DATA CENT%","%DATACENT%","%SERVER%","%HYPERSCALE%","%COLOCATION%","%DIGITAL INFRASTRUCTURE%","%MICROSOFT%","%AMAZON%","%AWS%","%GOOGLE%","%META%","%FACEBOOK%","%ECHELON%","%EQUINIX%","%VANTAGE%","%EDGECONNEX%","%DIGITAL REALTY%","%HERBATA%","%ENGINE NODE%","%ART DATA CENT%","%PURE DATA CENT%"]
     clauses=[]
     for f in likely[:8]:
         clauses += [f"UPPER({f}) LIKE '{term}'" for term in terms]
@@ -69,7 +69,7 @@ def main():
             ref=norm(first(a,["ApplicationNumber","Application Number","PlanningReference","Planning Ref","RegRef","Reg_Ref"]))
             desc=norm(first(a,["DevelopmentDescription","Development Description","Proposal","Description","DevelopmentDesc"]))
             address=norm(first(a,["DevelopmentAddress","Development Address","Address","Location"]))
-            applicant=norm(first(a,["ApplicantName","Applicant Name","Applicant"]))
+            applicant=norm(" ".join(x for x in [norm(first(a,["ApplicantForename","Applicant Forename"])), norm(first(a,["ApplicantSurname","Applicant Surname"])), norm(first(a,["ApplicantName","Applicant Name","Applicant"]))] if x))
             text=" | ".join([desc,address,applicant])
             flag,score,reasons=classify(text,cfg)
             key=f"{authority.upper()}|{ref.upper()}"
@@ -79,15 +79,25 @@ def main():
                 reasons={"manual_override":o.get("notes","")}
             if flag=="excluded": continue
             decision=norm(first(a,["Decision","DecisionType","Decision Type","ApplicationStatus","Status"]))
-            appeal=norm(first(a,["AppealReference","Appeal Ref","ABPRef","AppealStatus","Appeal Status"]))
+            appeal_ref=norm(first(a,["AppealRefNumber","AppealReference","Appeal Ref","ABPRef"]))
+            appeal_status=norm(first(a,["AppealStatus","Appeal Status"]))
             props={
               "key":key,"planning_authority":authority,"application_number":ref,
               "description":desc,"address":address,"applicant":applicant,
-              "received_date":iso_date(first(a,["ReceivedDate","Received Date","ApplicationDate","Application Date"])),
+              "application_status":norm(first(a,["ApplicationStatus","Application Status"])),
+              "application_type":norm(first(a,["ApplicationType","Application Type"])),
+              "received_date":iso_date(first(a,["ReceivedDate","Received Date"])),
               "decision":decision,"decision_date":iso_date(first(a,["DecisionDate","Decision Date"])),
-              "appeal":appeal,"appeal_decision":norm(first(a,["AppealDecision","Appeal Decision"])),
-              "fi_requested_date":iso_date(first(a,["FurtherInformationRequestDate","FIRequestDate","FI Request Date"])),
-              "fi_received_date":iso_date(first(a,["FurtherInformationReceivedDate","FIReceivedDate","FI Received Date"])),
+              "grant_date":iso_date(first(a,["GrantDate","Grant Date"])),
+              "expiry_date":iso_date(first(a,["ExpiryDate","Expiry Date"])),
+              "appeal":appeal_ref,"appeal_status":appeal_status,
+              "appeal_decision":norm(first(a,["AppealDecision","Appeal Decision"])),
+              "appeal_submitted_date":iso_date(first(a,["AppealSubmittedDate","Appeal Submitted Date"])),
+              "appeal_decision_date":iso_date(first(a,["AppealDecisionDate","Appeal Decision Date"])),
+              "fi_requested_date":iso_date(first(a,["FIRequestDate","FurtherInformationRequestDate","FI Request Date"])),
+              "fi_received_date":iso_date(first(a,["FIRecDate","FurtherInformationReceivedDate","FIReceivedDate","FI Received Date"])),
+              "floor_area":first(a,["FloorArea","Floor Area"]),
+              "site_area":first(a,["AreaofSite","Area of Site"]),
               "source_url":norm(first(a,["LinkAppDetails","ApplicationLink","URL","Link","PlanningLink"])),
               "flag":flag,"confidence_score":score,"flag_reasons":reasons,
               "project_name":manual.get(key,{}).get("project_name") or (address or ref),
