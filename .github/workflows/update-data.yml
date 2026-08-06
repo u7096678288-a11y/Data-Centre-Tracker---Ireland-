@@ -4,7 +4,11 @@ on:
     - cron: '15 5 * * *'
   workflow_dispatch:
   push:
-    paths: ['config/**','data/manual_overrides.json','scripts/update_data.py']
+    branches: [Main, main]
+    paths:
+      - 'config/**'
+      - 'data/manual_overrides.json'
+      - 'scripts/update_data.py'
 permissions:
   contents: write
 jobs:
@@ -13,7 +17,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: {python-version: '3.12'}
+        with:
+          python-version: '3.12'
       - run: python scripts/update_data.py
       - name: Commit refreshed data
         run: |
